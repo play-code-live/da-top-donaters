@@ -16,3 +16,7 @@ type DonationResponse struct {
 	Data []Donation `json:"data"`
 	Meta Meta       `json:"meta"`
 }
+
+type TokenResponse struct {
+	AccessToken string `json:"access_token"`
+}

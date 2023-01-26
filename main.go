@@ -11,12 +11,17 @@ import (
 const topAmount = 10
 
 func main() {
-	client := donationClient.NewClient(
+	client, err := donationClient.NewClient(
 		"10386",
 		"x9Auz25j1PULNJXl4FScvSnnEKzJIf95oXXYPgvq",
-		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxMDM4NiIsImp0aSI6Ijk2NmY5MjM0NDc1YTZmN2E3Zjc3MDEwODVhM2RiMGQ4YmJlNDE5YmRiOTZmZjc5ZjcwNTNjMzk1YTY1YWE4ODliZTFlY2E5MWE5NzQ1MDdhIiwiaWF0IjoxNjczMjg0MTE5LjMzNDMsIm5iZiI6MTY3MzI4NDExOS4zMzQzLCJleHAiOjIzMDQ0MzYxMTkuMjc4Mywic3ViIjoiNTM4NTIzOCIsInNjb3BlcyI6WyJvYXV0aC1kb25hdGlvbi1pbmRleCJdfQ.Ee8pYXqiSCB1Kz32jEnYnvdyGZFZ5cQVirvApuJC-l5k9afzeHY7p7spAqFSnFISSk3v8HiukB2qRl9kRzi49cs4NtV_XDJej3tL1q1NHWxUvOh1hDli_WWCn6SA0q6CNlmFMgqle7Ir2igamkQ1yW7OcHzuzNIJ9uKDx3-zQqxQuNPyPhlWEuOf9_i37MgNnB7mlalaICvP4_CPEXVWiynHjYgnNZ8jsvpBQs8GZoKq1nwVpfCx58DGt-7cnlL9UaGvYInW5UrEzfkiYTfdvKkrJBOR35qhQkjmhLpfzrv9ycebV1uNvh6PvhbSUXHaSxEootitpXd9LsbII2i4geOobGUP9zWmmcjoqGaht16eWC2kyJy-JxiwkdRCQ_pIxe6FdaMlDZ800LYCFUA7RZ1gX7Lc8xkrLIaIN_Ir8GNmKsRtooDGZ3mlrPFuJDtooi0zTLkNK5ap2ZfpoH1NMS3Y1E2WVnqUlzTUfWxW00bfqIDtZaukcUCsTrBrCLKKuan43g2tC2mKXeSRMBwzmxp3Q8nGfYk8B6yUlAXgOwWfZ3ijjMm4eEluTLNnhvisx2DEI2epB_iqjm1hRUNY38L-goOjOeUWLM90y1Z719Qlaz9aQ-k5u-5JQw3GyDv4ZI4twxbhRspvibykc2FuRCrbTIfkgX9Kwqh_K4ypFAs",
 	)
-	donations, _ := client.GetAllDonations()
+	if err != nil {
+		panic(err)
+	}
+	donations, err := client.GetAllDonations()
+	if err != nil {
+		panic(err)
+	}
 	adapter := nameAdapter.NewNameAdapter()
 
 	top := map[string]float64{}
