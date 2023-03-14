@@ -20,6 +20,7 @@ func NewNameAdapter() *NameAdapter {
 		"Gay":            "Fatcock",
 		"":               "Аноним",
 		"Sergey_tsurkan": "Fatcock",
+		"carrie":         "Carrie",
 	}, skip: []string{
 		"asdsadsa",
 		"play_code",
