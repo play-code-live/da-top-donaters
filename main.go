@@ -2,12 +2,15 @@ package main
 
 import (
 	"He110/donation-report-manager/internal/business/domain/configs"
+	"He110/donation-report-manager/internal/business/domain/donations"
 	"He110/donation-report-manager/internal/business/domain/user"
 	getConfigUseCase "He110/donation-report-manager/internal/business/use_cases/get_config_use_case"
+	getTopDonatersUseCase "He110/donation-report-manager/internal/business/use_cases/get_top_donaters_use_case"
 	saveConfigUseCase "He110/donation-report-manager/internal/business/use_cases/save_config_use_case"
 	saveTokenUseCase "He110/donation-report-manager/internal/business/use_cases/save_token_use_case"
 	donationClient "He110/donation-report-manager/internal/pkg/donation-alerts-client"
 	"He110/donation-report-manager/internal/web"
+	getTopDonaters "He110/donation-report-manager/internal/web/api/get_top_donaters"
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -32,9 +35,12 @@ func main() {
 	uStorage := user.NewStorage()
 	cStorage := configs.NewStorage()
 
+	daService := donations.NewService(client)
+
 	useCaseGetConfig := getConfigUseCase.New(uStorage, cStorage)
 	useCaseSaveToken := saveTokenUseCase.New(uStorage)
 	useCaseSaveConfig := saveConfigUseCase.New(uStorage, cStorage)
+	useCaseGetTopDonaters := getTopDonatersUseCase.New(uStorage, cStorage, daService)
 
 	container := web.NewTemplateContainer("templates/base/*.gohtml")
 	if err := container.FindAndRegister("templates/pages/"); err != nil {
@@ -77,6 +83,8 @@ func main() {
 	})
 
 	router.HandleFunc("/socket/{channelId}", app.SocketBridge())
+
+	router.HandleFunc("/api/donaters", getTopDonaters.NewTopDonatersHandler(useCaseGetTopDonaters))
 
 	ctx, _ = signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	// #### Web Server

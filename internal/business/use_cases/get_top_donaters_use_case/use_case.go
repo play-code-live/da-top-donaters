@@ -7,12 +7,13 @@ import (
 )
 
 type daService interface {
-	EnsureTokenRefreshed(usr *user.User) (string, error)
-	GetTopDonaters(count int, accessToken string) ([]donations.DonationItem, error)
+	EnsureTokenRefreshed(usr *user.User) (*user.User, error)
+	GetTopDonaters(channelId string, count int, accessToken string) ([]donations.DonationItem, error)
 }
 
 type userStorage interface {
 	GetUser(channelId string) (*user.User, error)
+	SaveUser(user *user.User) (*user.User, error)
 }
 
 type configStorage interface {
@@ -25,13 +26,21 @@ type UseCase struct {
 	daService     daService
 }
 
-func (u UseCase) Perform(channelId string) ([]donations.DonationItem, error) {
+func New(us userStorage, cs configStorage, daService daService) *UseCase {
+	return &UseCase{userStorage: us, configStorage: cs, daService: daService}
+}
+
+func (u UseCase) Perform(channelId string) (*TopDonatersResult, error) {
 	usr, err := u.userStorage.GetUser(channelId)
 	if err != nil {
 		return nil, err
 	}
 
-	accessToken, err := u.daService.EnsureTokenRefreshed(usr)
+	usr, err = u.daService.EnsureTokenRefreshed(usr)
+	if err != nil {
+		return nil, err
+	}
+	usr, err = u.userStorage.SaveUser(usr)
 	if err != nil {
 		return nil, err
 	}
@@ -41,5 +50,12 @@ func (u UseCase) Perform(channelId string) ([]donations.DonationItem, error) {
 		return nil, err
 	}
 
-	return u.daService.GetTopDonaters(cfg.DonatersCount, accessToken)
+	topDonaters, err := u.daService.GetTopDonaters(usr.ChannelID, cfg.DonatersCount, usr.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+	return &TopDonatersResult{
+		Config:   cfg,
+		Donaters: topDonaters,
+	}, nil
 }

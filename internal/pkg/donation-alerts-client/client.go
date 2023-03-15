@@ -20,7 +20,7 @@ type Client struct {
 const (
 	host              = "https://www.donationalerts.com"
 	endpointToken     = "/oauth/token"
-	endpointDonations = "/transport/v1/alerts/donations"
+	endpointDonations = "/api/v1/alerts/donations"
 	endpointAuthorize = "/oauth/authorize"
 
 	redirectEndpoint = "/redirect" //TODO: Pass from env
@@ -69,11 +69,10 @@ func (c *Client) ObtainAccessToken(code string) (*TokenResponse, error) {
 	return &result, nil
 }
 
-func (c *Client) RefreshToken(refreshToken, channelID string) (*TokenResponse, error) {
+func (c *Client) RefreshToken(refreshToken string) (*TokenResponse, error) {
 	response, err := c.performRequest("POST", endpointToken, map[string]string{
 		"refresh_token": refreshToken,
 		"grant_type":    "refresh_token",
-		"channel_id":    channelID,
 	})
 	if err != nil {
 		return nil, err
