@@ -4,6 +4,7 @@ import (
 	"He110/donation-report-manager/internal/business/domain/configs"
 	"He110/donation-report-manager/internal/business/domain/user"
 	getConfigUseCase "He110/donation-report-manager/internal/business/use_cases/get_config_use_case"
+	saveConfigUseCase "He110/donation-report-manager/internal/business/use_cases/save_config_use_case"
 	saveTokenUseCase "He110/donation-report-manager/internal/business/use_cases/save_token_use_case"
 	donationClient "He110/donation-report-manager/internal/pkg/donation-alerts-client"
 	"He110/donation-report-manager/internal/web"
@@ -15,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 )
 
@@ -32,6 +34,7 @@ func main() {
 
 	useCaseGetConfig := getConfigUseCase.New(uStorage, cStorage)
 	useCaseSaveToken := saveTokenUseCase.New(uStorage)
+	useCaseSaveConfig := saveConfigUseCase.New(uStorage, cStorage)
 
 	container := web.NewTemplateContainer("templates/base/*.gohtml")
 	if err := container.FindAndRegister("templates/pages/"); err != nil {
@@ -47,6 +50,26 @@ func main() {
 	router.HandleFunc("/redirect/{channelId}", app.HandlerChanneledRedirect())
 
 	router.Path("/config/{channelId}").Methods(http.MethodGet).HandlerFunc(app.HandlerGetConfig(socketHost))
+	router.Path("/config/{channelId}").Methods(http.MethodPost).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		channelId := vars["channelId"]
+		if err = r.ParseForm(); err != nil {
+			http.Error(w, "Cannot parse form data", http.StatusBadRequest)
+			return
+		}
+		count, _ := strconv.Atoi(r.FormValue("donaters_count"))
+
+		if _, err = useCaseSaveConfig.Perform(saveConfigUseCase.Parameters{
+			ChannelId:     channelId,
+			Title:         r.FormValue("panel_title"),
+			DonatersCount: count,
+		}); err != nil {
+			http.Error(w, "Cannot save configs", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/config/"+channelId, http.StatusSeeOther)
+	})
 	router.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		if err = container.MustGet("config_anonymous").Execute(w, nil); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

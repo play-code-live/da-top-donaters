@@ -1,7 +1,7 @@
 {{ define "contentPage" }}
     <div class="container mt-3">
         {{ if .IsAuthorized }}
-            <form>
+            <form method="POST">
                 <div class="mb-3">
                     <label for="panel_title" class="form-label">Заголовок панели</label>
                     <input type="text" class="form-control" id="panel_title" name="panel_title"  aria-describedby="panelTitleHelp" value="{{ .Config.Title }}">
@@ -22,7 +22,7 @@
     </div>
 
     <script>
-        window.Twitch.ext.onAuthorized(function(auth) {
+        window.Twitch.ext.onAuthorized((auth) => {
             let socket = new WebSocket("{{.SocketHost}}/socket/" + auth.channelId)
             socket.onopen = () => {
                 console.log("Connected to the managing socket")

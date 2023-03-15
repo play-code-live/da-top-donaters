@@ -20,10 +20,18 @@ func NewStorage() Storage {
 func (s *InMemoryStorage) GetConfig(channelID string) (*Config, error) {
 	cfg, exists := s.memory[channelID]
 	if !exists {
-		return &Config{ChannelID: channelID}, nil
+		return s.createDefaultConfig(channelID), nil
 	}
 
 	return &cfg, nil
+}
+
+func (s *InMemoryStorage) createDefaultConfig(channelId string) *Config {
+	return &Config{
+		ChannelID:     channelId,
+		Title:         "Топ донатеров",
+		DonatersCount: 10,
+	}
 }
 
 func (s *InMemoryStorage) Save(cfg *Config) (*Config, error) {
