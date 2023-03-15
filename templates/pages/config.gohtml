@@ -20,4 +20,16 @@
             </div>
         {{ end }}
     </div>
+
+    <script>
+        window.Twitch.ext.onAuthorized(function(auth) {
+            let socket = new WebSocket("{{.SocketHost}}/socket/" + auth.channelId)
+            socket.onopen = () => {
+                console.log("Connected to the managing socket")
+            }
+            socket.onmessage = () => {
+                window.location = "/config";
+            }
+        });
+    </script>
 {{ end }}

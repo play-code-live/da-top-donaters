@@ -6,6 +6,7 @@ import (
 	saveTokenUseCase "He110/donation-report-manager/internal/business/use_cases/save_token_use_case"
 	donationClient "He110/donation-report-manager/internal/pkg/donation-alerts-client"
 	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -40,7 +41,7 @@ func NewApp(c *TemplateContainer, daClient *donationClient.Client, ucGetConfig *
 	}
 }
 
-func (a *App) HandlerGetConfig() http.HandlerFunc {
+func (a *App) HandlerGetConfig(socketHost string) http.HandlerFunc {
 	cfgTpl := a.container.MustGet("config")
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -51,19 +52,23 @@ func (a *App) HandlerGetConfig() http.HandlerFunc {
 			return
 		}
 
+		response := GetConfigData{
+			IsAuthorized: false,
+			ChannelId:    channelId,
+			SocketHost:   socketHost,
+		}
+
 		config, err := a.ucGetConfig.Perform(channelId)
 		if err != nil && errors.Is(err, projectErrors.NotAuthorizedError{}) {
-			_ = cfgTpl.Execute(w, GetConfigData{ChannelId: channelId})
+			_ = cfgTpl.Execute(w, response)
 			return
 		} else if err != nil {
 			http.Error(w, "Cannot fetch extension config: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err = cfgTpl.Execute(w, GetConfigData{
-			IsAuthorized: true,
-			ChannelId:    channelId,
-			Config:       config,
-		}); err != nil {
+		response.IsAuthorized = true
+		response.Config = config
+		if err = cfgTpl.Execute(w, response); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
@@ -130,6 +135,7 @@ func (a *App) SocketBridge() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		channelId := vars["channelId"]
+		log.Println(fmt.Sprintf("Config page of %s has been connected", channelId))
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println(err)
@@ -151,6 +157,7 @@ func (a *App) refreshConfigPage(channelId string) {
 	if !exists {
 		return
 	}
+	log.Println("Refresh command has been sent")
 	if err := conn.WriteMessage(websocket.BinaryMessage, []byte("refresh")); err != nil {
 		if err.Error() != "websocket: close sent" {
 			log.Println(err)

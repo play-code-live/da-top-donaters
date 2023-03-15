@@ -21,6 +21,7 @@ import (
 func main() {
 	host := "http://localhost"
 	port := 8092
+	socketHost := "ws://localhost:8092"
 	client, err := donationClient.NewClient("10386", "x9Auz25j1PULNJXl4FScvSnnEKzJIf95oXXYPgvq", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		panic(err)
@@ -45,14 +46,14 @@ func main() {
 	router.HandleFunc("/redirect", app.HandlerRedirect())
 	router.HandleFunc("/redirect/{channelId}", app.HandlerChanneledRedirect())
 
-	router.Path("/config/{channelId}").Methods(http.MethodGet).HandlerFunc(app.HandlerGetConfig())
+	router.Path("/config/{channelId}").Methods(http.MethodGet).HandlerFunc(app.HandlerGetConfig(socketHost))
 	router.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		if err = container.MustGet("config_anonymous").Execute(w, nil); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
 
-	router.HandleFunc("/socket", app.SocketBridge())
+	router.HandleFunc("/socket/{channelId}", app.SocketBridge())
 
 	ctx, _ = signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	// #### Web Server
