@@ -1,0 +1,73 @@
+{{ define "contentPage" }}
+    <style>
+        .preloader-whirlpool {
+            position: relative;
+            margin-top: 100px;
+        }
+        .preloader-whirlpool .whirlpool {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border: 1px solid #ccc;
+            border-left-color: black;
+            border-radius: 974px;
+            -webkit-border-radius: 974px;
+            -moz-border-radius: 974px;
+            margin: -24px 0 0 -24px;
+            height: 49px;
+            width: 49px;
+            animation: cssload-rotate 1150ms linear infinite;
+            -o-animation: cssload-rotate 1150ms linear infinite;
+            -ms-animation: cssload-rotate 1150ms linear infinite;
+            -webkit-animation: cssload-rotate 1150ms linear infinite;
+            -moz-animation: cssload-rotate 1150ms linear infinite;
+        }
+        .preloader-whirlpool .whirlpool::before, .preloader-whirlpool .whirlpool::after {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border: 1px solid #ccc;
+            border-left-color: black;
+            border-radius: 974px;
+            -webkit-border-radius: 974px;
+            -moz-border-radius: 974px;
+        }
+        .preloader-whirlpool .whirlpool::before {
+            content: "";
+            margin: -22px 0 0 -22px;
+            height: 43px;
+            width: 43px;
+            animation: cssload-rotate 1150ms linear infinite;
+            -o-animation: cssload-rotate 1150ms linear infinite;
+            -ms-animation: cssload-rotate 1150ms linear infinite;
+            -webkit-animation: cssload-rotate 1150ms linear infinite;
+            -moz-animation: cssload-rotate 1150ms linear infinite;
+        }
+        .preloader-whirlpool .whirlpool::after {
+            content: "";
+            margin: -28px 0 0 -28px;
+            height: 55px;
+            width: 55px;
+            animation: cssload-rotate 2300ms linear infinite;
+            -o-animation: cssload-rotate 2300ms linear infinite;
+            -ms-animation: cssload-rotate 2300ms linear infinite;
+            -webkit-animation: cssload-rotate 2300ms linear infinite;
+            -moz-animation: cssload-rotate 2300ms linear infinite;
+        }
+
+        @keyframes cssload-rotate {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <div class="preloader-whirlpool">
+        <div class="whirlpool"></div>
+    </div>
+    <script>
+        window.Twitch.ext.onAuthorized(function(auth) {
+            window.location = "/config/"+auth.channelId;
+        });
+    </script>
+{{ end }}

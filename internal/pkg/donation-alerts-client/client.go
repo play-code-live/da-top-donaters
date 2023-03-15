@@ -3,9 +3,7 @@ package donation_client
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -22,10 +20,10 @@ type Client struct {
 const (
 	host              = "https://www.donationalerts.com"
 	endpointToken     = "/oauth/token"
-	endpointDonations = "/api/v1/alerts/donations"
+	endpointDonations = "/transport/v1/alerts/donations"
 	endpointAuthorize = "/oauth/authorize"
 
-	redirectEndpoint = "/donationAlertsRedirectUri/"
+	redirectEndpoint = "/redirect" //TODO: Pass from env
 )
 
 func NewClient(clientId, clientSecret, redirectHost string) (*Client, error) {
@@ -40,65 +38,25 @@ func NewClient(clientId, clientSecret, redirectHost string) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) getRedirectUri(channelId string) string {
-	return c.redirectHost + fmt.Sprintf(redirectEndpoint+"%s", channelId)
+func (c *Client) getRedirectUri() string {
+	return c.redirectHost + fmt.Sprintf(redirectEndpoint)
 }
 
-func (c *Client) GetAuthLink(channelId string) string {
-	//query := url.Values{}
-	//query.Add("response_type", "code")
-	//query.Add("client_id", c.clientId)
-	//query.Add("redirect_uri", c.getRedirectUri(channelId))
-	//query.Add("scope", strings.Join(c.scope, " "))
-
+func (c *Client) GetAuthLink() string {
 	query := fmt.Sprintf(
 		"response_type=%s&client_id=%s&redirect_uri=%s&scope=%s",
 		"code",
 		c.clientId,
-		c.getRedirectUri(channelId),
+		c.getRedirectUri(),
 		strings.Join(c.scope, " "),
 	)
 	return host + endpointAuthorize + "?" + query
 }
 
-func (c *Client) ListenAndServerAuthHandler(address string, onSuccess func(channelID string, response TokenResponse) error) error {
-	var server http.Server
-	router := mux.NewRouter()
-	router.HandleFunc(redirectEndpoint+"{channelID}", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("code")
-		channelID := mux.Vars(r)["channelID"]
-		tokenResponse, err := c.ObtainAccessToken(code, channelID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			//TODO Respond with some DTO
-			return
-		}
-
-		if err = onSuccess(channelID, *tokenResponse); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			//TODO Respond with some DTO
-			return
-		}
-		//TODO Respond with some DTO
-	})
-
-	server = http.Server{
-		Addr:    address,
-		Handler: router,
-	}
-	err := server.ListenAndServe()
-	if !errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Client) ObtainAccessToken(code, channelID string) (*TokenResponse, error) {
+func (c *Client) ObtainAccessToken(code string) (*TokenResponse, error) {
 	response, err := c.performRequest("POST", endpointToken, map[string]string{
 		"code":       code,
 		"grant_type": "authorization_code",
-		"channel_id": channelID,
 	})
 	if err != nil {
 		return nil, err
@@ -174,6 +132,7 @@ func (c *Client) performRequest(method, endpoint string, data map[string]string)
 	_ = writer.WriteField("client_id", c.clientId)
 	_ = writer.WriteField("client_secret", c.clientSecret)
 	_ = writer.WriteField("scope", strings.Join(c.scope, " "))
+	_ = writer.WriteField("redirect_uri", c.getRedirectUri())
 	if err := writer.Close(); err != nil {
 		return nil, err
 	}
@@ -181,10 +140,6 @@ func (c *Client) performRequest(method, endpoint string, data map[string]string)
 	req, err := http.NewRequest(method, requestUrl, payload)
 	if err != nil {
 		return nil, err
-	}
-
-	if channelId, exists := data["channel_id"]; exists {
-		_ = writer.WriteField("redirect_uri", c.getRedirectUri(channelId))
 	}
 
 	if accessToken, exists := data["access_token"]; exists {

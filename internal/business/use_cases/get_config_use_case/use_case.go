@@ -3,11 +3,8 @@ package getConfigUseCase
 import (
 	"He110/donation-report-manager/internal/business/domain/configs"
 	"He110/donation-report-manager/internal/business/domain/user"
+	"He110/donation-report-manager/internal/business/errors"
 )
-
-type twitchService interface {
-	GetChannelId(token string) (string, error)
-}
 
 type userStorage interface {
 	GetUser(channelId string) (*user.User, error)
@@ -18,20 +15,18 @@ type configStorage interface {
 }
 
 type UseCase struct {
-	twitchService twitchService
 	userStorage   userStorage
 	configStorage configStorage
 }
 
-func (u UseCase) Perform(twitchAccessToken string) (*configs.Config, error) {
-	channelId, err := u.twitchService.GetChannelId(twitchAccessToken)
-	if err != nil {
-		return nil, err
+func New(us userStorage, cs configStorage) *UseCase {
+	return &UseCase{userStorage: us, configStorage: cs}
+}
+
+func (u UseCase) Perform(channelId string) (*configs.Config, error) {
+	if _, err := u.userStorage.GetUser(channelId); err != nil {
+		return nil, errors.NotAuthorizedError{}
 	}
 
-	if _, err = u.userStorage.GetUser(channelId); err != nil {
-		return nil, err
-	}
-	
 	return u.configStorage.GetConfig(channelId)
 }

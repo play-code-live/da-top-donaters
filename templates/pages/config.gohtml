@@ -1,3 +1,23 @@
 {{ define "contentPage" }}
-    <h1>Some content of overlay template</h1>
+    <div class="container mt-3">
+        {{ if .IsAuthorized }}
+            <form>
+                <div class="mb-3">
+                    <label for="panel_title" class="form-label">Заголовок панели</label>
+                    <input type="text" class="form-control" id="panel_title" name="panel_title"  aria-describedby="panelTitleHelp" value="{{ .Config.Title }}">
+                    <div id="panelTitleHelp" class="form-text">Заголовок будет отображаться в самом верху панели</div>
+                </div>
+                <div class="mb-3">
+                    <label for="donaters_count" class="form-label">Кол-во записей в рейтинге</label>
+                    <input type="text" class="form-control" id="donaters_count" name="donaters_count"  aria-describedby="donatersCountHelp" value="{{ .Config.DonatersCount }}">
+                    <div id="donatersCountHelp" class="form-text">Как много участников рейтинга отображать</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </form>
+        {{ else }}
+            <div class="text-center">
+                <a href="/redirect/{{.ChannelId}}" target="_blank" class="btn btn-primary btn-lg">Авторизоваться в DA</a>
+            </div>
+        {{ end }}
+    </div>
 {{ end }}

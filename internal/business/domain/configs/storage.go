@@ -11,7 +11,7 @@ type InMemoryStorage struct {
 	memory map[string]Config
 }
 
-func NewInMemoryStorage() Storage {
+func NewStorage() Storage {
 	return &InMemoryStorage{
 		memory: make(map[string]Config),
 	}

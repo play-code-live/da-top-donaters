@@ -5,34 +5,28 @@ import (
 	"time"
 )
 
-type twitchService interface {
-	GetChannelId(token string) (string, error)
-}
-
 type userStorage interface {
 	SaveUser(user *user.User) (*user.User, error)
 }
 
 type UseCase struct {
-	twitchService twitchService
-	userStorage   userStorage
+	userStorage userStorage
+}
+
+func New(us userStorage) *UseCase {
+	return &UseCase{userStorage: us}
 }
 
 type Parameters struct {
-	TwitchAccessToken string
-	AccessToken       string
-	RefreshToken      string
-	ExpiresAfter      time.Time
+	ChannelId    string
+	AccessToken  string
+	RefreshToken string
+	ExpiresAfter time.Time
 }
 
 func (u UseCase) Perform(p Parameters) (*user.User, error) {
-	channelId, err := u.twitchService.GetChannelId(p.TwitchAccessToken)
-	if err != nil {
-		return nil, err
-	}
-
 	usr := &user.User{
-		ChannelID:    channelId,
+		ChannelID:    p.ChannelId,
 		AccessToken:  p.AccessToken,
 		RefreshToken: p.RefreshToken,
 		ExpiresAfter: p.ExpiresAfter,
