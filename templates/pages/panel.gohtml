@@ -1,3 +1,42 @@
 {{ define "contentPage" }}
-    <h1>Some content of overlay template</h1>
+    <style>
+        body {
+            background: transparent;
+            color: white;
+            font-weight: 100;
+            overflow-x: hidden;
+        }
+    </style>
+    <div class="row">
+        <div class="col">
+            <h3 id="panel_title"></h3>
+            <ol id="donaters_list">
+
+            </ol>
+        </div>
+    </div>
+    <script>
+        window.Twitch.ext.onAuthorized(function(auth) {
+            fetch("/api/donaters",  {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({channel_id: auth.channelId})
+            })
+                .then((response) => response.json())
+                .then((jsonResponse) => {
+                    let title = jsonResponse.data.config.title
+                    let donaters = jsonResponse.data.donations
+                    document.getElementById("panel_title").innerHTML = title
+                    let listBlock = document.getElementById("donaters_list")
+                    donaters.forEach((donationInfo) => {
+                        let li = document.createElement("li")
+                        li.innerHTML = `<strong>${donationInfo.name}</strong> - ${donationInfo.amount}`
+                        listBlock.append(li)
+                    })
+                })
+        });
+    </script>
 {{ end }}

@@ -41,6 +41,12 @@ func NewApp(c *TemplateContainer, daClient *donationClient.Client, ucGetConfig *
 	}
 }
 
+func (a *App) HandlerPanel() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_ = a.container.MustGet("panel").Execute(w, nil)
+	}
+}
+
 func (a *App) HandlerGetConfig(socketHost string) http.HandlerFunc {
 	cfgTpl := a.container.MustGet("config")
 

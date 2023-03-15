@@ -52,6 +52,8 @@ func main() {
 
 	router := mux.NewRouter()
 
+	router.HandleFunc("/panel", app.HandlerPanel())
+
 	router.HandleFunc("/redirect", app.HandlerRedirect())
 	router.HandleFunc("/redirect/{channelId}", app.HandlerChanneledRedirect())
 
