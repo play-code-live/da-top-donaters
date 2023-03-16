@@ -3,6 +3,7 @@ package web
 import (
 	projectErrors "He110/donation-report-manager/internal/business/errors"
 	getConfigUseCase "He110/donation-report-manager/internal/business/use_cases/get_config_use_case"
+	saveConfigUseCase "He110/donation-report-manager/internal/business/use_cases/save_config_use_case"
 	saveTokenUseCase "He110/donation-report-manager/internal/business/use_cases/save_token_use_case"
 	donationClient "He110/donation-report-manager/internal/pkg/donation-alerts-client"
 	"errors"
@@ -13,6 +14,8 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -24,16 +27,18 @@ var upgrader = websocket.Upgrader{
 type App struct {
 	container      *TemplateContainer
 	ucGetConfig    *getConfigUseCase.UseCase
+	ucSaveConfig   *saveConfigUseCase.UseCase
 	ucSaveToken    *saveTokenUseCase.UseCase
 	daClient       *donationClient.Client
 	sessionStorage *sessions.CookieStore
 	connections    map[string]*websocket.Conn
 }
 
-func NewApp(c *TemplateContainer, daClient *donationClient.Client, ucGetConfig *getConfigUseCase.UseCase, ucSaveToken *saveTokenUseCase.UseCase) *App {
+func NewApp(c *TemplateContainer, daClient *donationClient.Client, ucGetConfig *getConfigUseCase.UseCase, ucSaveConfig *saveConfigUseCase.UseCase, ucSaveToken *saveTokenUseCase.UseCase) *App {
 	return &App{
 		container:      c,
 		ucGetConfig:    ucGetConfig,
+		ucSaveConfig:   ucSaveConfig,
 		ucSaveToken:    ucSaveToken,
 		daClient:       daClient,
 		sessionStorage: sessions.NewCookieStore(securecookie.GenerateRandomKey(32)),
@@ -74,9 +79,40 @@ func (a *App) HandlerGetConfig(socketHost string) http.HandlerFunc {
 		}
 		response.IsAuthorized = true
 		response.Config = config
+		response.NamesToIgnore = strings.Join(config.NamesToIgnore, ", ")
+
 		if err = cfgTpl.Execute(w, response); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+	}
+}
+
+func (a *App) HandlerSaveConfig() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		channelId := vars["channelId"]
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Cannot parse form data", http.StatusBadRequest)
+			return
+		}
+		count, _ := strconv.Atoi(r.FormValue("donaters_count"))
+
+		names := strings.Split(r.FormValue("names_to_ignore"), ",")
+		for idx, n := range names {
+			names[idx] = strings.TrimSpace(n)
+		}
+
+		if _, err := a.ucSaveConfig.Perform(saveConfigUseCase.Parameters{
+			ChannelId:     channelId,
+			Title:         r.FormValue("panel_title"),
+			DonatersCount: count,
+			NamesToIgnore: names,
+		}); err != nil {
+			http.Error(w, "Cannot save configs", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/config/"+channelId, http.StatusSeeOther)
 	}
 }
 

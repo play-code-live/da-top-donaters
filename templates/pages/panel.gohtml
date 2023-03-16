@@ -33,7 +33,7 @@
                     let listBlock = document.getElementById("donaters_list")
                     donaters.forEach((donationInfo) => {
                         let li = document.createElement("li")
-                        li.innerHTML = `<strong>${donationInfo.name}</strong> - ${donationInfo.amount}`
+                        li.innerHTML = `<strong>${donationInfo.name}</strong>: ${donationInfo.amount}₽`
                         listBlock.append(li)
                     })
                 })

@@ -8,7 +8,7 @@ import (
 
 type daService interface {
 	EnsureTokenRefreshed(usr *user.User) (*user.User, error)
-	GetTopDonaters(channelId string, count int, accessToken string) ([]donations.DonationItem, error)
+	GetTopDonaters(channelId string, cfg *configs.Config, accessToken string) ([]donations.DonationItem, error)
 }
 
 type userStorage interface {
@@ -50,7 +50,7 @@ func (u UseCase) Perform(channelId string) (*TopDonatersResult, error) {
 		return nil, err
 	}
 
-	topDonaters, err := u.daService.GetTopDonaters(usr.ChannelID, cfg.DonatersCount, usr.AccessToken)
+	topDonaters, err := u.daService.GetTopDonaters(usr.ChannelID, cfg, usr.AccessToken)
 	if err != nil {
 		return nil, err
 	}

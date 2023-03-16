@@ -14,19 +14,25 @@ type userStorage interface {
 	GetUser(channelId string) (*user.User, error)
 }
 
+type daService interface {
+	ResetCache(channelId string) error
+}
+
 type UseCase struct {
 	userStorage   userStorage
 	configStorage configStorage
+	daService     daService
 }
 
-func New(us userStorage, cs configStorage) *UseCase {
-	return &UseCase{userStorage: us, configStorage: cs}
+func New(us userStorage, cs configStorage, service daService) *UseCase {
+	return &UseCase{userStorage: us, configStorage: cs, daService: service}
 }
 
 type Parameters struct {
 	ChannelId     string
 	Title         string
 	DonatersCount int
+	NamesToIgnore []string
 }
 
 func (u UseCase) Perform(p Parameters) (*configs.Config, error) {
@@ -39,7 +45,10 @@ func (u UseCase) Perform(p Parameters) (*configs.Config, error) {
 		ChannelID:     p.ChannelId,
 		Title:         p.Title,
 		DonatersCount: p.DonatersCount,
+		NamesToIgnore: p.NamesToIgnore,
 	}
+
+	_ = u.daService.ResetCache(p.ChannelId)
 
 	return u.configStorage.Save(cfg)
 }

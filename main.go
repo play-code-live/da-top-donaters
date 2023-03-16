@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
@@ -47,7 +46,7 @@ func main() {
 
 	useCaseGetConfig := getConfigUseCase.New(uStorage, cStorage)
 	useCaseSaveToken := saveTokenUseCase.New(uStorage)
-	useCaseSaveConfig := saveConfigUseCase.New(uStorage, cStorage)
+	useCaseSaveConfig := saveConfigUseCase.New(uStorage, cStorage, daService)
 	useCaseGetTopDonaters := getTopDonatersUseCase.New(uStorage, cStorage, daService)
 
 	container := web.NewTemplateContainer("templates/base/*.gohtml")
@@ -56,7 +55,7 @@ func main() {
 	}
 
 	errGroup, ctx := errgroup.WithContext(context.Background())
-	app := web.NewApp(container, client, useCaseGetConfig, useCaseSaveToken)
+	app := web.NewApp(container, client, useCaseGetConfig, useCaseSaveConfig, useCaseSaveToken)
 
 	router := mux.NewRouter()
 
@@ -66,26 +65,7 @@ func main() {
 	router.HandleFunc("/redirect/{channelId}", app.HandlerChanneledRedirect())
 
 	router.Path("/config/{channelId}").Methods(http.MethodGet).HandlerFunc(app.HandlerGetConfig(socketHost))
-	router.Path("/config/{channelId}").Methods(http.MethodPost).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		channelId := vars["channelId"]
-		if err = r.ParseForm(); err != nil {
-			http.Error(w, "Cannot parse form data", http.StatusBadRequest)
-			return
-		}
-		count, _ := strconv.Atoi(r.FormValue("donaters_count"))
-
-		if _, err = useCaseSaveConfig.Perform(saveConfigUseCase.Parameters{
-			ChannelId:     channelId,
-			Title:         r.FormValue("panel_title"),
-			DonatersCount: count,
-		}); err != nil {
-			http.Error(w, "Cannot save configs", http.StatusInternalServerError)
-			return
-		}
-
-		http.Redirect(w, r, "/config/"+channelId, http.StatusSeeOther)
-	})
+	router.Path("/config/{channelId}").Methods(http.MethodPost).HandlerFunc(app.HandlerSaveConfig())
 	router.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		if err = container.MustGet("config_anonymous").Execute(w, nil); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

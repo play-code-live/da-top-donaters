@@ -4,13 +4,18 @@
             <form method="POST">
                 <div class="mb-3">
                     <label for="panel_title" class="form-label">Заголовок панели</label>
-                    <input type="text" class="form-control" id="panel_title" name="panel_title"  aria-describedby="panelTitleHelp" value="{{ .Config.Title }}">
+                    <input type="text" class="form-control" id="panel_title" name="panel_title" aria-describedby="panelTitleHelp" value="{{ .Config.Title }}">
                     <div id="panelTitleHelp" class="form-text">Заголовок будет отображаться в самом верху панели</div>
                 </div>
                 <div class="mb-3">
                     <label for="donaters_count" class="form-label">Кол-во записей в рейтинге</label>
-                    <input type="text" class="form-control" id="donaters_count" name="donaters_count"  aria-describedby="donatersCountHelp" value="{{ .Config.DonatersCount }}">
+                    <input type="text" class="form-control" id="donaters_count" name="donaters_count" aria-describedby="donatersCountHelp" value="{{ .Config.DonatersCount }}">
                     <div id="donatersCountHelp" class="form-text">Как много участников рейтинга отображать</div>
+                </div>
+                <div class="mb-3">
+                    <label for="names_to_ignore" class="form-label">Игнорируемые имена</label>
+                    <input type="text" class="form-control" id="names_to_ignore" name="names_to_ignore" aria-describedby="namesToIgnoreHelp" value="{{ .NamesToIgnore }}">
+                    <div id="namesToIgnoreHelp" class="form-text">Имена донатеров через запятую</div>
                 </div>
                 <button type="submit" class="btn btn-primary">Сохранить</button>
             </form>

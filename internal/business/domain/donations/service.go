@@ -1,6 +1,7 @@
 package donations
 
 import (
+	"He110/donation-report-manager/internal/business/domain/configs"
 	"He110/donation-report-manager/internal/business/domain/user"
 	donationClient "He110/donation-report-manager/internal/pkg/donation-alerts-client"
 	"container/heap"
@@ -14,6 +15,7 @@ import (
 type cache interface {
 	Get(key interface{}) (interface{}, error)
 	Set(key interface{}, value interface{}, options *store.Options) error
+	Delete(key interface{}) error
 }
 
 const cacheKeyTpl = "top_donaters_%s"
@@ -48,17 +50,17 @@ func (s *DonationService) EnsureTokenRefreshed(usr *user.User) (*user.User, erro
 	return usr, nil
 }
 
-func (s *DonationService) GetTopDonaters(channelId string, count int, accessToken string) ([]DonationItem, error) {
-	donations, err := s.getTopDonaters(channelId, accessToken)
+func (s *DonationService) GetTopDonaters(channelId string, cfg *configs.Config, accessToken string) ([]DonationItem, error) {
+	donations, err := s.getTopDonaters(channelId, cfg, accessToken)
 	if err != nil {
 		return nil, err
 	}
 
-	return donations[:count], nil
+	return donations[:cfg.DonatersCount], nil
 }
 
-func (s *DonationService) getTopDonaters(channelId string, accessToken string) ([]DonationItem, error) {
-	donaters, err := s.getDonatersSums(channelId, accessToken)
+func (s *DonationService) getTopDonaters(channelId string, cfg *configs.Config, accessToken string) ([]DonationItem, error) {
+	donaters, err := s.getDonatersSums(channelId, cfg, accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -78,11 +80,20 @@ func (s *DonationService) getTopDonaters(channelId string, accessToken string) (
 	return result, nil
 }
 
-func (s *DonationService) getDonatersSums(channelId, accessToken string) (map[string]*DonationItem, error) {
+func (s *DonationService) getDonatersSums(channelId string, cfg *configs.Config, accessToken string) (map[string]*DonationItem, error) {
 	cacheKey := fmt.Sprintf(cacheKeyTpl, channelId)
 	cached, err := s.cache.Get(cacheKey)
 	if err == nil {
 		return cached.(map[string]*DonationItem), nil
+	}
+
+	prepareName := func(v string) string {
+		return strings.ToLower(strings.TrimSpace(v))
+	}
+
+	ignoredNames := make(map[string]struct{}, len(cfg.NamesToIgnore))
+	for _, name := range cfg.NamesToIgnore {
+		ignoredNames[prepareName(name)] = struct{}{}
 	}
 
 	donations, err := s.client.GetAllDonations(channelId, accessToken)
@@ -92,7 +103,10 @@ func (s *DonationService) getDonatersSums(channelId, accessToken string) (map[st
 
 	donaters := make(map[string]*DonationItem, 100)
 	for _, d := range donations {
-		namePrepared := strings.ToLower(strings.TrimSpace(d.Username))
+		namePrepared := prepareName(d.Username)
+		if _, skip := ignoredNames[namePrepared]; skip {
+			continue
+		}
 		if _, exists := donaters[namePrepared]; !exists {
 			donaters[namePrepared] = &DonationItem{Name: d.Username, Amount: 0}
 		}
@@ -101,4 +115,10 @@ func (s *DonationService) getDonatersSums(channelId, accessToken string) (map[st
 	}
 
 	return donaters, s.cache.Set(cacheKey, donaters, &store.Options{})
+}
+
+func (s *DonationService) ResetCache(channelId string) error {
+	cacheKey := fmt.Sprintf(cacheKeyTpl, channelId)
+
+	return s.cache.Delete(cacheKey)
 }

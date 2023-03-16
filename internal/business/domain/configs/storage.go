@@ -31,6 +31,7 @@ func (s *InMemoryStorage) createDefaultConfig(channelId string) *Config {
 		ChannelID:     channelId,
 		Title:         "Топ донатеров",
 		DonatersCount: 10,
+		NamesToIgnore: make([]string, 0),
 	}
 }
 
