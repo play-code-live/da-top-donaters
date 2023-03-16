@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/eko/gocache/store"
+	"strings"
 	"time"
 )
 
@@ -48,7 +49,7 @@ func (s *DonationService) EnsureTokenRefreshed(usr *user.User) (*user.User, erro
 }
 
 func (s *DonationService) GetTopDonaters(channelId string, count int, accessToken string) ([]DonationItem, error) {
-	donations, err := s.getTopDonaters(channelId, count, accessToken)
+	donations, err := s.getTopDonaters(channelId, accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -56,18 +57,15 @@ func (s *DonationService) GetTopDonaters(channelId string, count int, accessToke
 	return donations[:count], nil
 }
 
-func (s *DonationService) getTopDonaters(channelId string, count int, accessToken string) ([]DonationItem, error) {
+func (s *DonationService) getTopDonaters(channelId string, accessToken string) ([]DonationItem, error) {
 	donaters, err := s.getDonatersSums(channelId, accessToken)
 	if err != nil {
 		return nil, err
 	}
 
 	h := &MaxDonationHeap{}
-	for name, sum := range donaters {
-		heap.Push(h, DonationItem{
-			Name:   name,
-			Amount: sum,
-		})
+	for _, d := range donaters {
+		heap.Push(h, *d)
 	}
 
 	result := make([]DonationItem, 0, 100)
@@ -80,11 +78,11 @@ func (s *DonationService) getTopDonaters(channelId string, count int, accessToke
 	return result, nil
 }
 
-func (s *DonationService) getDonatersSums(channelId, accessToken string) (map[string]float64, error) {
+func (s *DonationService) getDonatersSums(channelId, accessToken string) (map[string]*DonationItem, error) {
 	cacheKey := fmt.Sprintf(cacheKeyTpl, channelId)
 	cached, err := s.cache.Get(cacheKey)
 	if err == nil {
-		return cached.(map[string]float64), nil
+		return cached.(map[string]*DonationItem), nil
 	}
 
 	donations, err := s.client.GetAllDonations(channelId, accessToken)
@@ -92,13 +90,14 @@ func (s *DonationService) getDonatersSums(channelId, accessToken string) (map[st
 		return nil, err
 	}
 
-	donaters := make(map[string]float64, 100)
+	donaters := make(map[string]*DonationItem, 100)
 	for _, d := range donations {
-		if _, exists := donaters[d.Username]; !exists {
-			donaters[d.Username] = 0
+		namePrepared := strings.ToLower(strings.TrimSpace(d.Username))
+		if _, exists := donaters[namePrepared]; !exists {
+			donaters[namePrepared] = &DonationItem{Name: d.Username, Amount: 0}
 		}
 
-		donaters[d.Username] += d.Amount
+		donaters[namePrepared].Amount += d.Amount
 	}
 
 	return donaters, s.cache.Set(cacheKey, donaters, &store.Options{})
