@@ -33,6 +33,7 @@ type Parameters struct {
 	Title         string
 	DonatersCount int
 	NamesToIgnore []string
+	TopCount      int
 }
 
 func (u UseCase) Perform(p Parameters) (*configs.Config, error) {
@@ -46,6 +47,7 @@ func (u UseCase) Perform(p Parameters) (*configs.Config, error) {
 		Title:         p.Title,
 		DonatersCount: p.DonatersCount,
 		NamesToIgnore: p.NamesToIgnore,
+		TopCount:      p.TopCount,
 	}
 
 	_ = u.daService.ResetCache(p.ChannelId)

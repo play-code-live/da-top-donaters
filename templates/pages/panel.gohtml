@@ -31,8 +31,12 @@
                     let donaters = jsonResponse.data.donations
                     document.getElementById("panel_title").innerHTML = title
                     let listBlock = document.getElementById("donaters_list")
-                    donaters.forEach((donationInfo) => {
+                    donaters.forEach((donationInfo, idx) => {
                         let li = document.createElement("li")
+                        if (idx+1 === jsonResponse.data.config.top_count) {
+                            li.classList.add("mb-3")
+                        }
+
                         li.innerHTML = `<strong>${donationInfo.name}</strong>: ${donationInfo.amount}₽`
                         listBlock.append(li)
                     })

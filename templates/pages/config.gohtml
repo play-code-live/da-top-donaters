@@ -13,6 +13,11 @@
                     <div id="donatersCountHelp" class="form-text">Как много участников рейтинга отображать</div>
                 </div>
                 <div class="mb-3">
+                    <label for="top_count" class="form-label">Отделить первые строки</label>
+                    <input type="text" class="form-control" id="top_count" name="top_count" aria-describedby="topCountHelp" value="{{ .Config.TopCount }}">
+                    <div id="topCountHelp" class="form-text">Сделать отступ после N записей. Если 0 - не делать отступ</div>
+                </div>
+                <div class="mb-3">
                     <label for="names_to_ignore" class="form-label">Игнорируемые имена</label>
                     <input type="text" class="form-control" id="names_to_ignore" name="names_to_ignore" aria-describedby="namesToIgnoreHelp" value="{{ .NamesToIgnore }}">
                     <div id="namesToIgnoreHelp" class="form-text">Имена донатеров через запятую</div>

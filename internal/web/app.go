@@ -96,6 +96,7 @@ func (a *App) HandlerSaveConfig() http.HandlerFunc {
 			return
 		}
 		count, _ := strconv.Atoi(r.FormValue("donaters_count"))
+		topCount, _ := strconv.Atoi(r.FormValue("top_count"))
 
 		names := strings.Split(r.FormValue("names_to_ignore"), ",")
 		for idx, n := range names {
@@ -107,6 +108,7 @@ func (a *App) HandlerSaveConfig() http.HandlerFunc {
 			Title:         r.FormValue("panel_title"),
 			DonatersCount: count,
 			NamesToIgnore: names,
+			TopCount:      topCount,
 		}); err != nil {
 			http.Error(w, "Cannot save configs", http.StatusInternalServerError)
 			return
