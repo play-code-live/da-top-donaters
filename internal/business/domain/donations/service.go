@@ -5,15 +5,25 @@ import (
 	donationClient "He110/donation-report-manager/internal/pkg/donation-alerts-client"
 	"container/heap"
 	"errors"
+	"fmt"
+	"github.com/eko/gocache/store"
 	"time"
 )
 
-type DonationService struct {
-	client *donationClient.Client
+type cache interface {
+	Get(key interface{}) (interface{}, error)
+	Set(key interface{}, value interface{}, options *store.Options) error
 }
 
-func NewService(client *donationClient.Client) *DonationService {
-	return &DonationService{client: client}
+const cacheKeyTpl = "top_donaters_%s"
+
+type DonationService struct {
+	client *donationClient.Client
+	cache  cache
+}
+
+func NewService(client *donationClient.Client, cacheManager cache) *DonationService {
+	return &DonationService{client: client, cache: cacheManager}
 }
 
 func (s *DonationService) EnsureTokenRefreshed(usr *user.User) (*user.User, error) {
@@ -47,21 +57,12 @@ func (s *DonationService) GetTopDonaters(channelId string, count int, accessToke
 }
 
 func (s *DonationService) getTopDonaters(channelId string, count int, accessToken string) ([]DonationItem, error) {
-	donations, err := s.client.GetAllDonations(channelId, accessToken)
+	donaters, err := s.getDonatersSums(channelId, accessToken)
 	if err != nil {
 		return nil, err
 	}
 
 	h := &MaxDonationHeap{}
-	donaters := make(map[string]float64, 100)
-	for _, d := range donations {
-		if _, exists := donaters[d.Username]; !exists {
-			donaters[d.Username] = 0
-		}
-
-		donaters[d.Username] += d.Amount
-	}
-
 	for name, sum := range donaters {
 		heap.Push(h, DonationItem{
 			Name:   name,
@@ -77,4 +78,28 @@ func (s *DonationService) getTopDonaters(channelId string, count int, accessToke
 	}
 
 	return result, nil
+}
+
+func (s *DonationService) getDonatersSums(channelId, accessToken string) (map[string]float64, error) {
+	cacheKey := fmt.Sprintf(cacheKeyTpl, channelId)
+	cached, err := s.cache.Get(cacheKey)
+	if err == nil {
+		return cached.(map[string]float64), nil
+	}
+
+	donations, err := s.client.GetAllDonations(channelId, accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	donaters := make(map[string]float64, 100)
+	for _, d := range donations {
+		if _, exists := donaters[d.Username]; !exists {
+			donaters[d.Username] = 0
+		}
+
+		donaters[d.Username] += d.Amount
+	}
+
+	return donaters, s.cache.Set(cacheKey, donaters, &store.Options{})
 }

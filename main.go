@@ -13,7 +13,10 @@ import (
 	getTopDonaters "He110/donation-report-manager/internal/web/api/get_top_donaters"
 	"context"
 	"fmt"
+	"github.com/eko/gocache/cache"
+	"github.com/eko/gocache/store"
 	"github.com/gorilla/mux"
+	goCache "github.com/patrickmn/go-cache"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
@@ -21,6 +24,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -32,10 +36,14 @@ func main() {
 		panic(err)
 	}
 
+	cacheClient := goCache.New(10*time.Minute, 30*time.Minute)
+	cacheStore := store.NewGoCache(cacheClient, nil)
+	cacheManager := cache.New(cacheStore)
+
 	uStorage := user.NewStorage()
 	cStorage := configs.NewStorage()
 
-	daService := donations.NewService(client)
+	daService := donations.NewService(client, cacheManager)
 
 	useCaseGetConfig := getConfigUseCase.New(uStorage, cStorage)
 	useCaseSaveToken := saveTokenUseCase.New(uStorage)

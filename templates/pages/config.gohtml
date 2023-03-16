@@ -18,18 +18,17 @@
             <div class="text-center">
                 <a href="/redirect/{{.ChannelId}}" target="_blank" class="btn btn-primary btn-lg">Авторизоваться в DA</a>
             </div>
+            <script>
+                window.Twitch.ext.onAuthorized((auth) => {
+                    let socket = new WebSocket("{{.SocketHost}}/socket/" + auth.channelId)
+                    socket.onopen = () => {
+                        console.log("Connected to the managing socket")
+                    }
+                    socket.onmessage = () => {
+                        window.location = "/config";
+                    }
+                });
+            </script>
         {{ end }}
     </div>
-
-    <script>
-        window.Twitch.ext.onAuthorized((auth) => {
-            let socket = new WebSocket("{{.SocketHost}}/socket/" + auth.channelId)
-            socket.onopen = () => {
-                console.log("Connected to the managing socket")
-            }
-            socket.onmessage = () => {
-                window.location = "/config";
-            }
-        });
-    </script>
 {{ end }}
