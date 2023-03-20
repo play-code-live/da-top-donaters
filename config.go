@@ -12,6 +12,7 @@ type Config struct {
 	SocketAddress  string `env:"SOCKET_ADDRESS"`
 	DaClientId     string `env:"CLIENT_ID"`
 	DaClientSecret string `env:"CLIENT_SECRET"`
+	DaRedirectUri  string `env:"REDIRECT_URI"`
 }
 
 func GetConfig() *Config {
@@ -23,6 +24,7 @@ func GetConfig() *Config {
 		SocketAddress:  os.Getenv("SOCKET_ADDRESS"),
 		DaClientId:     os.Getenv("CLIENT_ID"),
 		DaClientSecret: os.Getenv("CLIENT_SECRET"),
+		DaRedirectUri:  os.Getenv("REDIRECT_URI"),
 	}
 
 	return cfg

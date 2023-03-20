@@ -28,7 +28,7 @@ import (
 
 func main() {
 	cfg := GetConfig()
-	client, err := donationClient.NewClient(cfg.DaClientId, cfg.DaClientSecret, fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
+	client, err := donationClient.NewClient(cfg.DaClientId, cfg.DaClientSecret, cfg.DaRedirectUri)
 	if err != nil {
 		panic(err)
 	}

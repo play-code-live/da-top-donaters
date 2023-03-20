@@ -12,7 +12,7 @@ import (
 
 type Client struct {
 	clientId, clientSecret string
-	redirectHost           string
+	redirectUri            string
 	scope                  []string
 	client                 *http.Client
 }
@@ -22,15 +22,13 @@ const (
 	endpointToken     = "/oauth/token"
 	endpointDonations = "/api/v1/alerts/donations"
 	endpointAuthorize = "/oauth/authorize"
-
-	redirectEndpoint = "/redirect" //TODO: Pass from env
 )
 
-func NewClient(clientId, clientSecret, redirectHost string) (*Client, error) {
+func NewClient(clientId, clientSecret, redirectUri string) (*Client, error) {
 	c := &Client{
 		clientId:     clientId,
 		clientSecret: clientSecret,
-		redirectHost: redirectHost,
+		redirectUri:  redirectUri,
 		scope:        []string{"oauth-donation-index"},
 		client:       &http.Client{},
 	}
@@ -38,16 +36,12 @@ func NewClient(clientId, clientSecret, redirectHost string) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) getRedirectUri() string {
-	return c.redirectHost + fmt.Sprintf(redirectEndpoint)
-}
-
 func (c *Client) GetAuthLink() string {
 	query := fmt.Sprintf(
 		"response_type=%s&client_id=%s&redirect_uri=%s&scope=%s",
 		"code",
 		c.clientId,
-		c.getRedirectUri(),
+		c.redirectUri,
 		strings.Join(c.scope, " "),
 	)
 	return host + endpointAuthorize + "?" + query
@@ -131,7 +125,7 @@ func (c *Client) performRequest(method, endpoint string, data map[string]string)
 	_ = writer.WriteField("client_id", c.clientId)
 	_ = writer.WriteField("client_secret", c.clientSecret)
 	_ = writer.WriteField("scope", strings.Join(c.scope, " "))
-	_ = writer.WriteField("redirect_uri", c.getRedirectUri())
+	_ = writer.WriteField("redirect_uri", c.redirectUri)
 	if err := writer.Close(); err != nil {
 		return nil, err
 	}
