@@ -22,6 +22,8 @@ require (
 	github.com/go-redis/redis/v8 v8.8.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golobby/cast v1.3.3 // indirect
+	github.com/golobby/dotenv v1.3.2 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/pegasus-kv/thrift v0.13.0 // indirect

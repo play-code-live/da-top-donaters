@@ -27,10 +27,12 @@ import (
 )
 
 func main() {
-	host := "http://localhost"
-	port := 8092
-	socketHost := "ws://localhost:8092"
-	client, err := donationClient.NewClient("10386", "x9Auz25j1PULNJXl4FScvSnnEKzJIf95oXXYPgvq", fmt.Sprintf("%s:%d", host, port))
+	cfg, err := GetConfig()
+	if err != nil {
+		log.Fatalln("cannot prepare config file. " + err.Error())
+		return
+	}
+	client, err := donationClient.NewClient(cfg.DaClientId, cfg.DaClientSecret, fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +52,7 @@ func main() {
 	useCaseGetTopDonaters := getTopDonatersUseCase.New(uStorage, cStorage, daService)
 
 	container := web.NewTemplateContainer("templates/base/*.gohtml")
-	if err := container.FindAndRegister("templates/pages/"); err != nil {
+	if err = container.FindAndRegister("templates/pages/"); err != nil {
 		panic(err)
 	}
 
@@ -64,7 +66,7 @@ func main() {
 	router.HandleFunc("/redirect", app.HandlerRedirect())
 	router.HandleFunc("/redirect/{channelId}", app.HandlerChanneledRedirect())
 
-	router.Path("/config/{channelId}").Methods(http.MethodGet).HandlerFunc(app.HandlerGetConfig(socketHost))
+	router.Path("/config/{channelId}").Methods(http.MethodGet).HandlerFunc(app.HandlerGetConfig(cfg.SocketAddress))
 	router.Path("/config/{channelId}").Methods(http.MethodPost).HandlerFunc(app.HandlerSaveConfig())
 	router.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		if err = container.MustGet("config_anonymous").Execute(w, nil); err != nil {
@@ -80,10 +82,10 @@ func main() {
 	// #### Web Server
 	errGroup.Go(func() error {
 		server := http.Server{
-			Addr:    fmt.Sprintf(":%d", port),
+			Addr:    fmt.Sprintf(":%d", cfg.Port),
 			Handler: router,
 		}
-		fmt.Println("Web server has started")
+		log.Printf("webserver has started on :%d\n", cfg.Port)
 		return server.ListenAndServe()
 	})
 
