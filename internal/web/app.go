@@ -103,6 +103,10 @@ func (a *App) HandlerSaveConfig() http.HandlerFunc {
 			names[idx] = strings.TrimSpace(n)
 		}
 
+		for i := 0; i <= 6; i++ {
+			fmt.Println(i, r.PostFormValue(fmt.Sprintf("name_map[%d]", i)))
+		}
+
 		if _, err := a.ucSaveConfig.Perform(saveConfigUseCase.Parameters{
 			ChannelId:     channelId,
 			Title:         r.FormValue("panel_title"),

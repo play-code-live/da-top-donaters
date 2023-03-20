@@ -22,8 +22,43 @@
                     <input type="text" class="form-control" id="names_to_ignore" name="names_to_ignore" aria-describedby="namesToIgnoreHelp" value="{{ .NamesToIgnore }}">
                     <div id="namesToIgnoreHelp" class="form-text">Имена донатеров через запятую</div>
                 </div>
+                <label class="form-label">Приведение имен</label>
+                <div id="name_map" class="mb-3">
+                    <div id="name_map_example" class="row g-3 d-none mb-1">
+                        <div class="col-3">
+                            <input type="text" class="form-control" name="name_map[]" placeholder="Целевое имя">
+                        </div>
+                        <div class="col-8">
+                            <input type="text" class="form-control" name="name_map[]" placeholder="Приводимые имена через запятую">
+                        </div>
+                        <div class="col-1">
+                            <button type="button" class="btn btn-link remove_name_map_row" onclick="removeNameMapRow(event.target)">X</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="add_name_map_row" class="btn btn-secondary mb-3">Добавить</button>
+                <hr />
                 <button type="submit" class="btn btn-primary">Сохранить</button>
             </form>
+
+            <script>
+                const addNameMapRowBtn = document.getElementById('add_name_map_row')
+                const nameMapList = document.getElementById('name_map')
+                function addNameMapRow() {
+                    const ex = document.getElementById('name_map_example')
+                    const row = ex.cloneNode(true)
+                    row.classList.remove('d-none')
+                    row.id = null
+                    nameMapList.append(row)
+                }
+                addNameMapRowBtn.onclick = addNameMapRow
+                if (nameMapList.childElementCount <= 1) {
+                    addNameMapRow()
+                }
+                function removeNameMapRow(t) {
+                    t.parentElement.parentNode.remove()
+                }
+            </script>
         {{ else }}
             <div class="text-center">
                 <a href="/redirect/{{.ChannelId}}" target="_blank" class="btn btn-primary btn-lg">Авторизоваться в DA</a>
