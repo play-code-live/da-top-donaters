@@ -27,11 +27,7 @@ import (
 )
 
 func main() {
-	cfg, err := GetConfig()
-	if err != nil {
-		log.Fatalln("cannot prepare config file. " + err.Error())
-		return
-	}
+	cfg := GetConfig()
 	client, err := donationClient.NewClient(cfg.DaClientId, cfg.DaClientSecret, fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
 	if err != nil {
 		panic(err)
